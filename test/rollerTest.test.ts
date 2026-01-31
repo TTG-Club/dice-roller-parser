@@ -1,8 +1,8 @@
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import * as dist from '../src/index';
 
-import type { RollBase } from '../src/rollTypes';
+import type { DiceRollResult, RollBase } from '../src/rollTypes';
 
 const testRolls: [string, number][] = [
   ['d20+5', 1 + 5],
@@ -63,70 +63,106 @@ const testRolls: [string, number][] = [
 
 const roller = new dist.DiceRoller(() => 0);
 
-testRolls.forEach(([roll, expectedValue]) => {
-  it(roll, () => {
-    expect(roller.rollValue(roll)).toBe(expectedValue);
+function isDiceRollResult(roll: RollBase): roll is DiceRollResult {
+  return roll.type === 'die';
+}
+
+describe('diceRoller', () => {
+  testRolls.forEach(([roll, expectedValue]) => {
+    it(roll, () => {
+      expect(roller.rollValue(roll)).toBe(expectedValue);
+    });
   });
-});
 
-const testFixedRolls: [string, number, number[]][] = [
-  ['1d6!!', 14, [0.84, 0.84, 0.17]], // value = [6,6,2]
-  ['4d6!!', 24, [0.84, 0.67, 0.5, 0.17, 0.84, 0]], // value = [6,5,4,2,6,1]
-  ['4d6dl1', 15, [0.84, 0.67, 0.5, 0.17]], // value = [6,5,4,2]
-  ['4d6>4', 2, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
-  ['4d6<2', 1, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
-  ['3d6>3f1', -3, [0, 0, 0]], // [1,1,1]
-  ['3d6>3f1', 2, [0.84, 0.17, 0.5]], // [6,2,4]
-  ['4d6<2f>4', -1, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
-  ['4d6', 15, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
-  ['{3d6>4 + 3d4>3, 2d8>7}', 5, [0.84, 0.17, 0.5, 0.76, 0, 0.49, 0.5, 0.86]], // [6,2,4,3,1,2,3,5,7]
-  ['{2d6!}>5', 3, [0.17, 0.84, 0.84, 0.67]], // [2,6!,6!,5]
-  // TODO: +3 modifier is not being added before eval with target
-  // ['{3d6+3}<3',0,[0,0,0]], //[1,1,1]
-  // ['{3d6+1}<3',2,[0,.17,.34]], //[1,2,3]
-  // ['{3d6+1}<3',1,[.84,0,.34]], //[6,1,3]
-];
+  it('d6 never produces values below 1 or above 6', () => {
+    const randomRoller = new dist.DiceRoller();
 
-let externalCount: number = 0;
-let rollsAsFloats: Array<number> = [];
+    for (let iteration = 0; iteration < 10_000; iteration++) {
+      const roll = randomRoller.roll('1d6');
 
-const fixedRoller = new dist.DiceRoller(
-  (rolls: Array<number> = rollsAsFloats) => {
-    if (rolls.length > 0) {
-      return rolls[externalCount++];
-    } else {
+      expect(isDiceRollResult(roll)).toBe(true);
+
+      if (isDiceRollResult(roll)) {
+        for (const dieRoll of roll.rolls) {
+          expect(dieRoll.roll).toBeGreaterThanOrEqual(1);
+          expect(dieRoll.roll).toBeLessThanOrEqual(6);
+        }
+      }
+    }
+  });
+
+  const testFixedRolls: [string, number, number[]][] = [
+    ['1d6!!', 14, [0.84, 0.84, 0.17]], // value = [6,6,2]
+    ['4d6!!', 24, [0.84, 0.67, 0.5, 0.17, 0.84, 0]], // value = [6,5,4,2,6,1]
+    ['4d6dl1', 15, [0.84, 0.67, 0.5, 0.17]], // value = [6,5,4,2]
+    ['4d6>4', 2, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
+    ['4d6<2', 1, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
+    ['3d6>3f1', -3, [0, 0, 0]], // [1,1,1]
+    ['3d6>3f1', 2, [0.84, 0.17, 0.5]], // [6,2,4]
+    ['4d6<2f>4', -1, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
+    ['4d6', 15, [0.84, 0.17, 0.5, 0.34]], // [6,2,4,3]
+    ['{3d6>4 + 3d4>3, 2d8>7}', 5, [0.84, 0.17, 0.5, 0.76, 0, 0.49, 0.5, 0.86]], // [6,2,4,3,1,2,3,5,7]
+    ['{2d6!}>5', 3, [0.17, 0.84, 0.84, 0.67]], // [2,6!,6!,5]
+    // TODO: +3 modifier is not being added before eval with target
+    // ['{3d6+3}<3',0,[0,0,0]], //[1,1,1]
+    // ['{3d6+1}<3',2,[0,.17,.34]], //[1,2,3]
+    // ['{3d6+1}<3',1,[.84,0,.34]], //[6,1,3]
+  ];
+
+  let externalCount = 0;
+  let rollsAsFloats: Array<number> = [];
+
+  const fixedRoller = new dist.DiceRoller(
+    (rolls: Array<number> = rollsAsFloats) => {
+      if (rolls.length > 0) {
+        const rollValue = rolls[externalCount];
+
+        externalCount += 1;
+
+        return rollValue;
+      }
+
       console.warn(
         'No results passed to the dice-roller-parser. Using fallback Math.random',
       );
 
       return Math.random();
-    }
-  },
-);
+    },
+  );
 
-testFixedRolls.forEach(([roll, expectedValue, values]) => {
-  it(roll, () => {
-    externalCount = 0;
-    rollsAsFloats = values;
+  testFixedRolls.forEach(([roll, expectedValue, values]) => {
+    it(roll, () => {
+      externalCount = 0;
+      rollsAsFloats = values;
 
-    const result: any = fixedRoller.roll(roll);
+      const result = fixedRoller.roll(roll);
 
-    expect(result.value).toBe(expectedValue);
+      expect(result.value).toBe(expectedValue);
+    });
   });
-});
 
-const testSortRolls: [string, number[], number[]][] = [
-  ['5d6sd', [6, 5, 4, 2, 1], [0.67, 0.5, 0.17, 0.84, 0]], // value = [5,4,2,6,1]
-  ['5d6sa', [1, 2, 4, 5, 6], [0.67, 0.5, 0.17, 0.84, 0]], // value = [5,4,2,6,1]
-  ['4d6s', [1, 3, 4, 6], [0.84, 0, 0.5, 0.34]], // value = [6,1,4,3]
-];
+  const testSortRolls: [string, number[], number[]][] = [
+    ['5d6sd', [6, 5, 4, 2, 1], [0.67, 0.5, 0.17, 0.84, 0]], // value = [5,4,2,6,1]
+    ['5d6sa', [1, 2, 4, 5, 6], [0.67, 0.5, 0.17, 0.84, 0]], // value = [5,4,2,6,1]
+    ['4d6s', [1, 3, 4, 6], [0.84, 0, 0.5, 0.34]], // value = [6,1,4,3]
+  ];
 
-testSortRolls.forEach(([roll, expectedValue, values]) => {
-  externalCount = 0;
-  rollsAsFloats = values;
+  testSortRolls.forEach(([roll, expectedValue, values]) => {
+    it(roll, () => {
+      externalCount = 0;
+      rollsAsFloats = values;
 
-  const result: any = fixedRoller.roll(roll);
-  const diceOrder = result.rolls.map((r: RollBase) => r.value);
+      const result = fixedRoller.roll(roll);
 
-  expect(diceOrder).toStrictEqual(expectedValue);
+      expect(isDiceRollResult(result)).toBe(true);
+
+      if (!isDiceRollResult(result)) {
+        return;
+      }
+
+      const diceOrder = result.rolls.map((dieRoll) => dieRoll.value);
+
+      expect(diceOrder).toStrictEqual(expectedValue);
+    });
+  });
 });
