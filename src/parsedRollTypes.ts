@@ -1,43 +1,50 @@
-import { MathFunction, DiceGroupMathOperation, MathOperation, CompareOperation, HighLowType } from "./utilityTypes";
+import type {
+  CompareOperation,
+  DiceGroupMathOperation,
+  HighLowType,
+  MathFunction,
+  MathOperation,
+} from './utilityTypes';
 
 /** The type of the parsed object  */
-export type ParsedObjectType = "number"
-	| "inline"
-	| "success"
-	| "failure"
-	| "match"
-	| "keep"
-	| "drop"
-	| "group"
-	| "diceExpression"
-	| "sort"
-	| "explode"
-	| "compound"
-	| "penetrate"
-	| "reroll"
-	| "rerollOnce"
-	| "target"
-	| "die"
-	| "fate"
-	| "expression"
-	| "expression"
-	| "math"
-	| "crit"
-	| "critfail"
-	| "mathfunction";
+export type ParsedObjectType =
+  | 'number'
+  | 'inline'
+  | 'success'
+  | 'failure'
+  | 'match'
+  | 'keep'
+  | 'drop'
+  | 'group'
+  | 'diceExpression'
+  | 'sort'
+  | 'explode'
+  | 'compound'
+  | 'penetrate'
+  | 'reroll'
+  | 'rerollOnce'
+  | 'target'
+  | 'die'
+  | 'fate'
+  | 'expression'
+  | 'expression'
+  | 'math'
+  | 'crit'
+  | 'critfail'
+  | 'mathfunction';
 
 /** The base interface for all parsed types */
 export interface ParsedType {
-	/** The type of parsed item this object represents */
-	type: ParsedObjectType;
+  /** The type of parsed item this object represents */
+  type: ParsedObjectType;
 }
 
 /** The base interface for a subset of parsed types */
 export interface RootType extends ParsedType {
-	/** The text label attached to this roll */
-	label?: string;
-	/** A boolean flag to indicate if this is the root of the parse tree */
-	root: boolean;
+  /** The text label attached to this roll */
+  label?: string;
+  /** A boolean flag to indicate if this is the root of the parse tree */
+  root: boolean;
 }
 
 /**
@@ -45,9 +52,9 @@ export interface RootType extends ParsedType {
  * @example 17
  */
 export interface NumberType extends RootType {
-	type: "number";
-	/** The value of the number */
-	value: number;
+  type: 'number';
+  /** The value of the number */
+  value: number;
 }
 
 /**
@@ -55,9 +62,9 @@ export interface NumberType extends RootType {
  * @example I want to roll [[2d20]] dice
  */
 export interface InlineExpression extends RootType {
-	type: "inline";
-	/** The expression that was parsed as the inline string */
-	expr: Expression;
+  type: 'inline';
+  /** The expression that was parsed as the inline string */
+  expr: Expression;
 }
 
 /** A combined type representing any roll */
@@ -68,8 +75,8 @@ export type AnyRoll = GroupedRoll | FullRoll | NumberType;
  * @example {4d6+3d8}kh1
  */
 export interface ModGroupedRoll extends RootType {
-	/** The modifiers to be applied to the grouped roll */
-	mods?: (KeepDropModType | SuccessFailureModType)[];
+  /** The modifiers to be applied to the grouped roll */
+  mods?: (KeepDropModType | SuccessFailureModType)[];
 }
 
 /**
@@ -80,16 +87,16 @@ export interface ModGroupedRoll extends RootType {
  * @example 3d6f<3
  */
 export interface SuccessFailureCritModType extends ParsedType {
-	type: "success" | "failure" | "crit" | "critfail";
-	/** The operation to use for the comparison */
-	mod: CompareOperation;
-	/** An expression representing the success or failure comparison */
-	expr: RollExpression;
+  type: 'success' | 'failure' | 'crit' | 'critfail';
+  /** The operation to use for the comparison */
+  mod: CompareOperation;
+  /** An expression representing the success or failure comparison */
+  expr: RollExpression;
 }
 
 /** Equivalent to the `SuccessFailureCritModType` but only supporting "success" and "failure" */
 export interface SuccessFailureModType extends SuccessFailureCritModType {
-	type: "success" | "failure";
+  type: 'success' | 'failure';
 }
 
 /**
@@ -104,24 +111,24 @@ export interface SuccessFailureModType extends SuccessFailureCritModType {
  * @example 20d6m>3 Only counts matches where the rolled value is > 3
  */
 export interface MatchModType extends ParsedType {
-	type: "match";
-	/**
-	 * The minimum number of matches to accept
-	 * @default 2 as a `NumberType`
-	 */
-	min: NumberType;
-	/** Whether or not to count the matches */
-	count: boolean;
-	/**
-	 * The check type to use for the match condition, if specified
-	 * @optional
-	 */
-	mod?: CompareOperation;
-	/**
-	 * An expression representing the match condition, if specified
-	 * @optional
-	 */
-	expr?: RollExpression;
+  type: 'match';
+  /**
+   * The minimum number of matches to accept
+   * @default 2 as a `NumberType`
+   */
+  min: NumberType;
+  /** Whether or not to count the matches */
+  count: boolean;
+  /**
+   * The check type to use for the match condition, if specified
+   * @optional
+   */
+  mod?: CompareOperation;
+  /**
+   * An expression representing the match condition, if specified
+   * @optional
+   */
+  expr?: RollExpression;
 }
 
 /**
@@ -129,15 +136,15 @@ export interface MatchModType extends ParsedType {
  * @example 2d20kh1
  */
 export interface KeepDropModType extends ParsedType {
-	type: "keep" | "drop";
-	/** Whether to keep/drop the highest or lowest roll */
-	highlow: HighLowType;
-	/**
-	 * An expression representing the number of rolls to keep
-	 * @example 2d6
-	 * @default 1 as a `NumberType`
-	 */
-	expr: RollExpression;
+  type: 'keep' | 'drop';
+  /** Whether to keep/drop the highest or lowest roll */
+  highlow: HighLowType;
+  /**
+   * An expression representing the number of rolls to keep
+   * @example 2d6
+   * @default 1 as a `NumberType`
+   */
+  expr: RollExpression;
 }
 
 /**
@@ -145,8 +152,8 @@ export interface KeepDropModType extends ParsedType {
  * @example {2d6,3d6}
  */
 export interface GroupedRoll extends ModGroupedRoll {
-	type: "group";
-	rolls: RollExpression[];
+  type: 'group';
+  rolls: RollExpression[];
 }
 
 /**
@@ -154,11 +161,11 @@ export interface GroupedRoll extends ModGroupedRoll {
  * @example {2d6,3d6}kh1 + {3d6 + 2d6}kh2
  */
 export interface RollExpressionType extends RootType {
-	/** The initial roll or expression for the roll expression */
-	head: RollOrExpression,
-	type: "diceExpression",
-	/** The operations to apply to the initial roll or expression */
-	ops: MathType<RollOrExpression, DiceGroupMathOperation>[],
+  /** The initial roll or expression for the roll expression */
+  head: RollOrExpression;
+  type: 'diceExpression';
+  /** The operations to apply to the initial roll or expression */
+  ops: MathType<RollOrExpression, DiceGroupMathOperation>[];
 }
 
 /** A combination of a complex roll expression, a roll, or a math expression. Used as a helper for type combinations */
@@ -172,14 +179,14 @@ export type RollOrExpression = FullRoll | Expression;
  * @example 2d6kh1
  */
 export interface FullRoll extends DiceRoll {
-	/** Any modifiers attached to the roll */
-	mods?: (ReRollMod | KeepDropModType)[];
-	/** Any success or failure targets for the roll */
-	targets?: (SuccessFailureCritModType)[]
-	/** Any match modifiers for the roll */
-	match?: MatchModType
-	/** Any sort operations to apply to the roll */
-	sort?: SortRollType;
+  /** Any modifiers attached to the roll */
+  mods?: (ReRollMod | KeepDropModType)[];
+  /** Any success or failure targets for the roll */
+  targets?: SuccessFailureCritModType[];
+  /** Any match modifiers for the roll */
+  match?: MatchModType;
+  /** Any sort operations to apply to the roll */
+  sort?: SortRollType;
 }
 
 /**
@@ -187,9 +194,9 @@ export interface FullRoll extends DiceRoll {
  * @example 10d6sa
  */
 export interface SortRollType extends ParsedType {
-	type: "sort";
-	/** Whether to sort ascending or descending */
-	asc: boolean;
+  type: 'sort';
+  /** Whether to sort ascending or descending */
+  asc: boolean;
 }
 
 /**
@@ -202,20 +209,20 @@ export interface SortRollType extends ParsedType {
  * @example 2d6!
  */
 export interface ReRollMod extends ParsedType {
-	type: "explode" | "compound" | "penetrate" | "reroll" | "rerollOnce",
-	/** The target modifier to compare the roll value against */
-	target: TargetMod
+  type: 'explode' | 'compound' | 'penetrate' | 'reroll' | 'rerollOnce';
+  /** The target modifier to compare the roll value against */
+  target: TargetMod;
 }
 
 /**
  * A target modifier to apply to a roll
  */
 export interface TargetMod extends ParsedType {
-	type: "target";
-	/** The check type to use for the condition */
-	mod: CompareOperation;
-	/** An expression representing the target condition value */
-	value: RollExpr;
+  type: 'target';
+  /** The check type to use for the condition */
+  mod: CompareOperation;
+  /** An expression representing the target condition value */
+  value: RollExpr;
 }
 
 /**
@@ -223,11 +230,11 @@ export interface TargetMod extends ParsedType {
  * @example 2d6
  */
 export interface DiceRoll extends RootType {
-	/** The die value to roll against, can be a fate die, a number or a complex roll expression */
-	die: RollExpr | FateExpr;
-	/** The number of time to roll this die */
-	count: RollExpr;
-	type: "die";
+  /** The die value to roll against, can be a fate die, a number or a complex roll expression */
+  die: RollExpr | FateExpr;
+  /** The number of time to roll this die */
+  count: RollExpr;
+  type: 'die';
 }
 
 /**
@@ -235,7 +242,7 @@ export interface DiceRoll extends RootType {
  * @example 2dF
  */
 export interface FateExpr extends ParsedType {
-	type: "fate";
+  type: 'fate';
 }
 
 /** A combination of a number or value that is not an expression. Used as a helper for type combinations */
@@ -249,11 +256,11 @@ export type Expression = InlineExpression | MathExpression;
  * @example 2d6 + 3d6 * 4d6
  */
 export interface MathExpression extends RootType {
-	/** The initial roll to perform operations against */
-	head: AnyRoll;
-	type: "expression";
-	/** The operations to apply to the initial roll */
-	ops: MathType<AnyRoll>[];
+  /** The initial roll to perform operations against */
+  head: AnyRoll;
+  type: 'expression';
+  /** The operations to apply to the initial roll */
+  ops: MathType<AnyRoll>[];
 }
 
 /**
@@ -262,12 +269,15 @@ export interface MathExpression extends RootType {
  * @param OpValues The possible operations that can be used
  * @example + 3d6 (as part of 2d6 + 3d6)
  */
-export interface MathType<TailType, OpValues = MathOperation> extends ParsedType {
-	type: "math";
-	/** The math operation to perform */
-	op: OpValues;
-	/** The second value to use in the operation */
-	tail: TailType;
+export interface MathType<
+  TailType,
+  OpValues = MathOperation,
+> extends ParsedType {
+  type: 'math';
+  /** The math operation to perform */
+  op: OpValues;
+  /** The second value to use in the operation */
+  tail: TailType;
 }
 
 /**
@@ -275,9 +285,9 @@ export interface MathType<TailType, OpValues = MathOperation> extends ParsedType
  * @example floor(3d6 / 2d4)
  */
 export interface MathFunctionExpression extends RootType {
-	type: "mathfunction";
-	/** The function to be applied */
-	op: MathFunction;
-	/** The expression to apply the function on */
-	expr: AnyRoll;
+  type: 'mathfunction';
+  /** The function to be applied */
+  op: MathFunction;
+  /** The expression to apply the function on */
+  expr: AnyRoll;
 }

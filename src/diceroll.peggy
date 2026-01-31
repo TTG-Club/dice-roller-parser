@@ -59,7 +59,7 @@ SuccessMod = mod:(">"/"<"/"=") expr:RollExpr {
 	}
 }
 
-FailureMod = "f" mod:(">"/"<"/"=")? expr:RollExpr {
+FailureMod = ("f" / "п") mod:(">"/"<"/"=")? expr:RollExpr {
 	return {
 		type: "failure",
 		mod,
@@ -67,7 +67,7 @@ FailureMod = "f" mod:(">"/"<"/"=")? expr:RollExpr {
 	}
 }
 
-CriticalSuccessMod = "cs" mod:(">"/"<"/"=")? expr:RollExpr {
+CriticalSuccessMod = ("cs" / "ку") mod:(">"/"<"/"=")? expr:RollExpr {
 	return {
 		type: "crit",
 		mod,
@@ -75,7 +75,7 @@ CriticalSuccessMod = "cs" mod:(">"/"<"/"=")? expr:RollExpr {
 	}
 }
 
-CriticalFailureMod = "cf" mod:(">"/"<"/"=")? expr:RollExpr {
+CriticalFailureMod = ("cf" / "кп") mod:(">"/"<"/"=")? expr:RollExpr {
 	return {
 		type: "critfail",
 		mod,
@@ -90,11 +90,12 @@ MatchTarget = mod:(">"/"<"/"=") expr:RollExpr {
 	}
 }
 
-MatchMod = "m" count:"t"? min:Integer? target: MatchTarget? {
+MatchMod = op:("mt" / "m" / "совпк" / "совп") min:Integer? target: MatchTarget? {
+	const isCount = op === "mt" || op === "совпк";
 	const match = {
 		type: "match",
 		min: min || { type: "number", value: 2 },
-		count: !!count,
+		count: isCount,
 	}
 
 	if (target) {
@@ -105,20 +106,23 @@ MatchMod = "m" count:"t"? min:Integer? target: MatchTarget? {
 	return match;
 }
 
-KeepMod = "k" highlow:("l" / "h")? expr:RollExpr? {
+KeepMod = ("k" / "в") highlow:("l" / "h" / "л" / "х")? expr:RollExpr? {
+    let normalizedHighLow = highlow;
+    if (highlow === "л") normalizedHighLow = "h";
+    if (highlow === "х") normalizedHighLow = "l";
+
 	return {
 		type: "keep",
-		highlow,
+		highlow: normalizedHighLow,
 		expr: expr || defaultExpression,
 	}
 }
 
-DropMod = "d" highlow:("l" / "h")? expr:RollExpr? {
-	return {
-		type: "drop",
-		highlow,
-		expr: expr || defaultExpression,
-	}
+DropMod = op:("dh" / "dl" / "d" / "уб" / "ул" / "ух") expr:RollExpr? {
+  let highlow = null;
+  if (op === "dh" || op === "ул") highlow = "h";
+  if (op === "dl" || op === "ух") highlow = "l";
+  return { type: "drop", highlow, expr: expr || defaultExpression };
 }
 
 GroupedRoll = "{" _ head:(RollExpression) tail:(_ "," _ (RollExpression))* _ "}" {
@@ -178,8 +182,8 @@ TargetedRoll = head:RolledModRoll mods:(DropMod / KeepMod / SuccessMod / Failure
 	return head;
 }
 
-SortMod = "s" dir:("a" / "d")? {
-	if(dir == "d"){
+SortMod = ("s" / "с") dir:("a" / "d" / "в" / "у")? {
+	if(dir == "d" || dir == "у"){
 		return {
 			type: "sort",
 			asc: false
@@ -210,14 +214,14 @@ CompoundRoll = "!!" target:TargetMod? {
 	}
 }
 
-PenetrateRoll = "!p" target:TargetMod? {
+PenetrateRoll = ("!p" / "!п") target:TargetMod? {
 	return {
 		type: "penetrate",
 		target,
 	}
 }
 
-ReRollMod = "r" target:TargetMod? {
+ReRollMod = ("r" / "пб") target:TargetMod? {
 	target = target || defaultTarget;
 
 	return {
@@ -226,7 +230,7 @@ ReRollMod = "r" target:TargetMod? {
 	}
 }
 
-ReRollOnceMod = "ro" target:TargetMod? {
+ReRollOnceMod = ("ro" / "пр") target:TargetMod? {
 	target = target || defaultTarget;
 
 	return {
@@ -243,7 +247,17 @@ TargetMod = mod:(">"/"<"/"=")? value:RollExpr {
 	}
 }
 
-DiceRoll = head:RollExpr? "d" tail:(FateExpr / PercentExpr / RollExpr) {
+DiceRoll = FateRoll / StandardDiceRoll
+
+FateRoll = head:RollExpr? op:("dF" / "df" / "кС" / "кс") {
+	return {
+		die: { type: "fate" },
+		count: head || { type: "number", value: 1 },
+		type: "die"
+	}
+}
+
+StandardDiceRoll = head:RollExpr? ("d" / "к") tail:(PercentExpr / RollExpr) {
 	head = head ? head : { type: "number", value: 1 };
 
 	return {
@@ -251,12 +265,6 @@ DiceRoll = head:RollExpr? "d" tail:(FateExpr / PercentExpr / RollExpr) {
 		count: head,
 		type: "die"
 	};
-}
-
-FateExpr = ("F" / "f") {
-	return {
-		type: "fate",
-	}
 }
 
 PercentExpr = ("%") {
@@ -335,7 +343,15 @@ ModExpoExpression = head:FunctionOrRoll tail:(_ ("**" / "%") _ FunctionOrRoll)* 
 	};
 }
 
-MathFunction = "floor" / "ceil" / "round" / "abs"
+MathFunction = op:("floor" / "ceil" / "round" / "abs" / "низ" / "верх" / "окр" / "мод") {
+    switch (op) {
+        case "низ": return "floor";
+        case "верх": return "ceil";
+        case "окр": return "round";
+        case "мод": return "abs";
+        default: return op;
+    }
+}
 
 MathFnExpression = op:MathFunction _ "(" _ expr:AddSubExpression _ ")" {
 	return {

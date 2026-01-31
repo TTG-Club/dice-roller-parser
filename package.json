@@ -1,61 +1,98 @@
 {
-	"name": "@3d-dice/dice-roller-parser",
-	"version": "0.2.6",
-	"description": "A javascript dice roller that parses roll20 format strings and generates rolled outputs",
-	"main": "dist/index.js",
-	"module": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"typings": "dist/index.d.ts",
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "npm run clean && pegjs src/diceroll.pegjs && tslint -c tslint.json --project tsconfig.json && webpack",
-		"clean": "rimraf dist/ src/diceroll.js",
-		"test": "jest",
-		"prepublishOnly": "npm run build",
-		"prepare": "npm run build"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/3d-dice/dice-roller-parser.git"
-	},
-	"keywords": [
-		"dice",
-		"roller",
-		"roll",
-		"roll20",
-		"rpg",
-		"trpg",
-		"tabletop",
-		"dnd",
-		"d&d",
-		"dungeons",
-		"dragons",
-		"pathfinder"
-	],
-	"author": "Ben Morton <ben.morton91@gmail.com>",
-	"contributors": [
-		{
-			"name": "Frank Ali <frankieali4@gmail.com>"
-		}
-	],
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/3d-dice/dice-roller-parser/issues"
-	},
-	"homepage": "https://github.com/3d-dice/dice-roller-parser#readme",
-	"devDependencies": {
-		"@types/jest": "^27.5.1",
-		"@types/node": "^16.11.36",
-		"jest": "^27.5.1",
-		"pegjs": "^0.10.0",
-		"rimraf": "^3.0.2",
-		"ts-jest": "^27.1.5",
-		"ts-loader": "^9.3.0",
-		"tslint": "^6.1.3",
-		"typescript": "^4.7.2",
-		"webpack": "^5.72.1",
-		"webpack-cli": "^4.9.2"
-	}
+  "name": "@ttg-club/dice-roller-parser",
+  "type": "module",
+  "version": "0.2.6",
+  "packageManager": "pnpm@10.28.1",
+  "description": "A javascript dice roller that parses roll20 format strings and generates rolled outputs",
+  "author": "Ben Morton <ben.morton91@gmail.com>",
+  "contributors": [
+    {
+      "name": "Frank Ali",
+      "email": "frankieali4@gmail.com"
+    },
+    {
+      "name": "TTG Club",
+      "url": "https://github.com/TTG-Club"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/ttg-club/dice-roller-parser#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttg-club/dice-roller-parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ttg-club/dice-roller-parser/issues"
+  },
+  "keywords": [
+    "dice",
+    "roller",
+    "roll",
+    "roll20",
+    "rpg",
+    "parser",
+    "tabletop",
+    "dnd",
+    "d&d",
+    "дайсы",
+    "кубы",
+    "кости",
+    "кубики",
+    "бросок",
+    "нри",
+    "днд"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "nr gen && tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit",
+    "gen": "peggy --format es --output src/diceroll.js src/diceroll.peggy",
+    "test": "vitest",
+    "prepack": "nr build",
+    "release": "bumpp && pnpm publish",
+    "sync-ai-rules": "node .scripts/sync-ai-rules.js",
+    "prepare": "simple-git-hooks"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {},
+  "dependencies": {},
+  "devDependencies": {
+    "@antfu/ni": "^28.2.0",
+    "@svifty7/eslint-config": "^0.0.11",
+    "@types/node": "^22.10.0",
+    "bumpp": "^10.4.0",
+    "eslint": "^9.17.0",
+    "lint-staged": "^15.2.0",
+    "peggy": "^4.2.0",
+    "rimraf": "^6.0.0",
+    "simple-git-hooks": "^2.11.0",
+    "tsdown": "^0.19.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged",
+    "post-checkout": "pnpm sync-ai-rules",
+    "post-merge": "pnpm sync-ai-rules",
+    "post-rewrite": "pnpm sync-ai-rules"
+  }
 }
